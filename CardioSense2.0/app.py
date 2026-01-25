@@ -12,24 +12,28 @@ from tensorflow import keras
 from session_eval import evaluate_session, SESSION_BEATS
 
 # =========================
-# LOAD MODEL (ONCE)
-# =========================
-MODEL_PATH = os.path.join("models", "beat_model.keras")
-
-@st.cache_resource
-def load_model():
-    return keras.models.load_model(MODEL_PATH)
-
-model = load_model()
-
-# =========================
-# PAGE CONFIG
+# PAGE CONFIG (MUST BE FIRST)
 # =========================
 st.set_page_config(
     page_title="CardioSense",
     page_icon="🫀",
     layout="centered"
 )
+
+# =========================
+# LOAD MODEL (ONCE)
+# =========================
+MODEL_PATH = os.path.join("models", "beat_model.keras")
+
+if not os.path.exists(MODEL_PATH):
+    st.error(f"Model not found at {MODEL_PATH}")
+    st.stop()
+
+@st.cache_resource
+def load_model():
+    return keras.models.load_model(MODEL_PATH)
+
+model = load_model()
 
 # =========================
 # TITLE
@@ -59,7 +63,7 @@ option = st.radio(
 beats = None
 
 # -------------------------
-# DEMO MODE (REAL DEMO DATA)
+# DEMO MODE
 # -------------------------
 if option == "Use demo MIT-BIH sample":
     st.info("Using real demo ECG beats derived from MIT-BIH.")
@@ -76,6 +80,10 @@ if option == "Use demo MIT-BIH sample":
     }[demo_type]
 
     beats = np.load(demo_path)
+
+    if beats.shape != (SESSION_BEATS, 360):
+        st.error(f"Demo data shape invalid: {beats.shape}")
+        beats = None
 
 # -------------------------
 # UPLOAD MODE
