@@ -45,9 +45,13 @@ def evaluate_session(beats: np.ndarray):
             - abnormal_beats: count
             - beat_predictions: list of beat labels
     """
-    assert beats.shape[0] == SESSION_BEATS, \
-        f"Expected {SESSION_BEATS} beats, got {beats.shape[0]}"
 
+    if beats.shape[0] != SESSION_BEATS:
+        raise ValueError(
+            f"Expected {SESSION_BEATS} beats, got {beats.shape[0]}"
+        )
+
+    # Beat-level inference
     preds, probs = predict_beats(beats)
 
     # Abnormal = anything not Normal
@@ -58,34 +62,11 @@ def evaluate_session(beats: np.ndarray):
     # Final session decision
     result = "Abnormal" if abnormal_ratio >= ABNORMAL_THRESHOLD else "Normal"
 
-    beat_predictions = [CLASS_NAMES[p] for p in preds]
-
-    return {import numpy as np
-
-SESSION_BEATS = 30
-
-def evaluate_session(beats, model):
-    beats = (beats - beats.mean(axis=1, keepdims=True)) / (
-        beats.std(axis=1, keepdims=True) + 1e-8
-    )
-    beats = beats[..., np.newaxis]
-
-    probs = model.predict(beats)
-    preds = np.argmax(probs, axis=1)
-
-    abnormal = (preds != 0).astype(int)
-    abnormal_ratio = abnormal.sum() / SESSION_BEATS
-
-    result = "Abnormal" if abnormal_ratio >= 0.1 else "Normal"
+    beat_predictions = [CLASS_NAMES[int(p)] for p in preds]
 
     return {
         "result": result,
-        "confidence": abnormal_ratio,
-        "abnormal_beats": abnormal.sum(),
-        "beat_predictions": preds.tolist()
-    }
-        "result": result,
-        "confidence": abnormal_ratio,
+        "confidence": float(abnormal_ratio),
         "abnormal_beats": abnormal_count,
         "beat_predictions": beat_predictions
     }
